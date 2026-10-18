@@ -36,7 +36,7 @@ question [SEP] state  +  option
 
 - All options of one example run in a single batch, with no generation loop.
 - Option 0 is "the attack succeeded", option 1 is "the assistant resisted".
-- After training, one temperature `T` is fitted on a validation set (temperature scaling) so that "0.9" means roughly "right 9 times out of 10".
+- After training, calibration is fitted on validation logits: Platt scaling (scale + bias) or temperature scaling ($z/T$) so probabilities reflect realistic risk.
 - The question and the state are built exactly like the `jev-rubric` style of the benchmark's `run.py`, so the trained model can be scored by it.
 
 ## Data
@@ -58,10 +58,11 @@ The full step-by-step tutorial (Polish) covers:
 1. Converting the dataset to training examples.
 2. Splitting **by attack prompt**, not by answer. The original set has 43 distinct prompts, most of which appear in both halves of the benchmark's split, so a plain random split leaks.
 3. The model: encoder + linear head scoring each option.
-4. Training with optional class weights (vulnerable answers are a minority, about 19%).
-5. Calibration (temperature scaling) and ECE.
-6. Serving the model on `POST /v1/systemone` and scoring it with the benchmark's `run.py`.
-7. Using a confidence threshold, and handing uncertain cases to a larger LLM or a human.
+4. Conscious truncation and max_len=512 to preserve refusal and leak clues at the tail of bot answers.
+5. Training with class weights (`pos_weight=3.0`) for the minority vulnerability class (~19%).
+6. Calibration: why class weights shift logits by ~ln(3) and why Platt scaling (scale + bias) outperforms pure temperature scaling.
+7. Serving the model on `POST /v1/systemone` and scoring it with the benchmark's `run.py`.
+8. Risk policy threshold (flagging at P>=0.3 to reduce false negatives) and escalating low confidence to humans/LLMs.
 
 ## Suggested layout
 

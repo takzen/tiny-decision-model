@@ -2,7 +2,7 @@
 Lightweight HTTP server serving POST /v1/systemone for kanari-decision-bench run.py.
 
 Usage:
-    uv run python serve.py --checkpoint checkpoints/model.pt --port 8000
+    uv run python serve.py --checkpoint checkpoints/model_benchmark.pt --port 8000
 """
 
 import argparse
@@ -14,13 +14,15 @@ import torch
 
 from src.inference import DecisionEngine
 from src.model import logits_for
+from src.calibrate import apply_calibration
 
 
 def create_handler(engine: DecisionEngine):
     model = engine.model
-    tokenizer = engine.tokenizer
     collate = engine._collate_fn
     temperature = engine.temperature
+    platt_scale = engine.platt_scale
+    platt_bias = engine.platt_bias
     device = engine.device
 
     class SystemOneHandler(BaseHTTPRequestHandler):
@@ -56,7 +58,13 @@ def create_handler(engine: DecisionEngine):
                         batch = collate([{"state": state, "question": instructions, "options": options}])
                         with torch.no_grad():
                             raw_logits = logits_for(model, batch, device)
-                            probs = (raw_logits / temperature).softmax(dim=-1)[0]
+                            cal_logits = apply_calibration(
+                                raw_logits,
+                                temperature=temperature,
+                                platt_scale=platt_scale,
+                                platt_bias=platt_bias,
+                            )
+                            probs = cal_logits.softmax(dim=-1)[0]
                             p_true = float(probs[0].item())
 
                         answers[q_key] = {
@@ -75,7 +83,13 @@ def create_handler(engine: DecisionEngine):
                         batch = collate([{"state": state, "question": instructions, "options": options}])
                         with torch.no_grad():
                             raw_logits = logits_for(model, batch, device)
-                            probs = (raw_logits / temperature).softmax(dim=-1)[0]
+                            cal_logits = apply_calibration(
+                                raw_logits,
+                                temperature=temperature,
+                                platt_scale=platt_scale,
+                                platt_bias=platt_bias,
+                            )
+                            probs = cal_logits.softmax(dim=-1)[0]
 
                         prob_dict = {
                             name: float(probs[i].item()) for i, name in enumerate(opt_names)
@@ -90,7 +104,13 @@ def create_handler(engine: DecisionEngine):
                         batch = collate([{"state": state, "question": instructions, "options": options}])
                         with torch.no_grad():
                             raw_logits = logits_for(model, batch, device)
-                            probs = (raw_logits / temperature).softmax(dim=-1)[0]
+                            cal_logits = apply_calibration(
+                                raw_logits,
+                                temperature=temperature,
+                                platt_scale=platt_scale,
+                                platt_bias=platt_bias,
+                            )
+                            probs = cal_logits.softmax(dim=-1)[0]
                         answers[q_key] = {"noul": float(probs[0].item())}
 
                 response_bytes = json.dumps({"answers": answers}).encode("utf-8")
@@ -127,7 +147,24 @@ def main():
         print(f"Checkpoint {ckpt_path} not found. Running with base pretrained encoder...")
         engine = DecisionEngine(device=args.device)
 
-    print(f"Model ready on {engine.device}. Temperature T={engine.temperature:.4f}")
+    # Check for contamination risk if trained on group split
+    if engine.split_type == "group":
+        print("\n" + "=" * 70)
+        print("[WARNING] BENCHMARK CONTAMINATION RISK:")
+        print("This checkpoint was trained on the 'group' split, which contains 71 of 95")
+        print("examples present in kanari-decision-bench's Half B evaluation set.")
+        print("Running run.py benchmark against this server will produce INFLATED scores.")
+        print("For fair comparison with the benchmark table, train on '--split benchmark' (Half A).")
+        print("=" * 70 + "\n")
+    elif engine.split_type == "benchmark":
+        print("\n[INFO] Verified checkpoint: trained on 'benchmark' split (Half A only).")
+        print("Clean for evaluation against benchmark Half B without contamination.\n")
+
+    cal_info = f"T={engine.temperature:.4f}"
+    if engine.platt_scale is not None and engine.platt_bias is not None:
+        cal_info += f", Platt(scale={engine.platt_scale:.4f}, bias={engine.platt_bias:.4f})"
+    print(f"Model ready on {engine.device}. Calibration: {cal_info}")
+
     server = HTTPServer((args.host, args.port), create_handler(engine))
     print(f"Server listening on http://{args.host}:{args.port}/v1/systemone")
     try:

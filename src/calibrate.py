@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Optional
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -33,6 +33,8 @@ def calibrate_temperature(
     """
     Fits a single temperature T > 0 on validation logits using LBFGS to minimize
     cross-entropy loss (Temperature Scaling).
+    Note: Temperature scaling scales logits by 1/T but does not include a bias term,
+    so it cannot correct for constant shifts introduced by class-weighted loss (pos_weight).
     """
     log_t = torch.zeros(1, requires_grad=True)
     optimizer = torch.optim.LBFGS([log_t], lr=lr, max_iter=max_iter)
@@ -47,6 +49,58 @@ def calibrate_temperature(
     optimizer.step(closure)
     temperature = log_t.exp().item()
     return float(temperature)
+
+
+def calibrate_platt(
+    logits: torch.Tensor,
+    labels: torch.Tensor,
+    max_iter: int = 50,
+    lr: float = 0.1,
+) -> Tuple[float, float]:
+    """
+    Fits Platt scaling (scale a > 0, bias b in R) for binary decisions:
+    P(class 0) = sigmoid(a * (z0 - z1) + b).
+    This jointly corrects both over/under-confidence (scale a) and shift from class weights (bias b),
+    matching the methodology used by kanari-decision-bench.
+    """
+    diff = logits[:, 0] - logits[:, 1]
+    target = (labels == 0).float()
+
+    log_a = torch.zeros(1, requires_grad=True)
+    b = torch.zeros(1, requires_grad=True)
+    optimizer = torch.optim.LBFGS([log_a, b], lr=lr, max_iter=max_iter)
+    bce = nn.BCEWithLogitsLoss()
+
+    def closure():
+        optimizer.zero_grad()
+        scaled = log_a.exp() * diff + b
+        loss = bce(scaled, target)
+        loss.backward()
+        return loss
+
+    optimizer.step(closure)
+    scale = log_a.exp().item()
+    bias = b.item()
+    return float(scale), float(bias)
+
+
+def apply_calibration(
+    logits: torch.Tensor,
+    temperature: float = 1.0,
+    platt_scale: Optional[float] = None,
+    platt_bias: Optional[float] = None,
+) -> torch.Tensor:
+    """
+    Applies either Platt scaling (if scale and bias are provided) or temperature scaling.
+    Returns calibrated logits suitable for standard softmax(dim=-1).
+    """
+    if platt_scale is not None and platt_bias is not None and logits.shape[-1] == 2:
+        diff = logits[..., 0] - logits[..., 1]
+        scaled = platt_scale * diff + platt_bias
+        return torch.stack([scaled / 2.0, -scaled / 2.0], dim=-1)
+    else:
+        temp = max(1e-4, float(temperature))
+        return logits / temp
 
 
 def compute_ece(probs: torch.Tensor, labels: torch.Tensor, bins: int = 10) -> float:
