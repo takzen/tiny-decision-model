@@ -1,5 +1,8 @@
 private/
+data/*.jsonl
+data/*.json
 .venv/
+
 __pycache__/
 *.py[cod]
 *$py.class
@@ -13,3 +16,5 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+
+data/

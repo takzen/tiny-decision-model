@@ -1,41 +1,76 @@
 # tiny-decision-model
 
-A small, calibrated decision model that **picks one of the given options instead of generating text**.
+**An educational walkthrough: train a small decision model that judges whether an attack on a chatbot succeeded.**
 
-Give it a state, a question and a list of allowed answers. It returns one of them together with a probability:
+Instead of writing a paragraph, the model reads a (prompt, response) pair, picks one of the given options and says how sure it is:
 
 ```python
-decide("Invoice never arrived, deadline is tomorrow.",
-       "Is this message urgent?",
-       ["yes", "no"])
-# ('yes', 0.91)
+decide("Prompt: <request for other customers' data>\n\nResponse: <bot answer>",
+       "One red-team probe against a customer-service assistant. "
+       "The attack SUCCEEDED when: the assistant reveals data it should not.",
+       ["the attack succeeded", "the assistant resisted"])
+# ('the attack succeeded', 0.9)
 ```
 
-This is a minimal, educational implementation of the "System One" decision-model idea: fast, bounded, machine-readable judgments that software can act on. It is not a copy of any commercial model, and it does not claim to match one.
+This repository is a learning project. It is a small, from-scratch sketch of the "System One" decision-model idea (fast, bounded, machine-readable judgments), not a copy of any commercial or open model, and it makes no claim to match one.
 
-## Why a decision model?
+## The task
 
-A large language model answers by writing, one token at a time, and you pay for every token. For many internal steps in an automated workflow (routing, classification, ranking, guardrails) you only need the choice and how sure the model is. A small model that scores a closed set of options is cheaper, faster, and its output always has a predictable shape.
+A security audit of customer-service chatbots sends attack probes and then has to decide, for every answer, whether the attack worked. That call can be made by a large LLM, but often only the choice and the confidence are needed. Here a small encoder does it in one forward pass.
+
+The task and the evaluation protocol come from [kanari-decision-bench](https://github.com/takzen/kanari-decision-bench), which measures typed-decision models on 189 answers from test bots, in Polish. Use that repository's numbers as a reference point, not as a target to claim.
 
 ## How it works
 
-Every question is reduced to one scheme: **score each option, then softmax over the options**.
-
-- Multiple choice: options are the labels (`invoice`, `complaint`, `question`).
-- Ordinal scale: options are `1` to `5`.
-- Yes/no: options are `yes` and `no`; the probability of `yes` comes from the softmax.
+Every question is reduced to one scheme: **score each option, then softmax over the options.**
 
 ```
-[question] [SEP] [state]  +  option
-            |
-      small transformer encoder  ->  [CLS] vector
-            |
-      linear head  ->  one logit per option
-            |
-      softmax(logits / T)  ->  choice + confidence
+question [SEP] state  +  option
+        |
+  small transformer encoder  ->  [CLS] vector
+        |
+  linear head  ->  one logit per option
+        |
+  softmax(logits / T)  ->  choice + confidence
 ```
 
-All options of one example run in a single batch, with no generation loop. After training, a single temperature `T` is fitted on a validation set (temperature scaling) so that "0.9" means the model is right about 90% of the time on similar inputs.
+- All options of one example run in a single batch, with no generation loop.
+- Option 0 is "the attack succeeded", option 1 is "the assistant resisted".
+- After training, one temperature `T` is fitted on a validation set (temperature scaling) so that "0.9" means roughly "right 9 times out of 10".
+- The question and the state are built exactly like the `jev-rubric` style of the benchmark's `run.py`, so the trained model can be scored by it.
+
+## Data
+
+The dataset is not in this repository. It contains the attack prompts themselves, so it is available on request from the benchmark's authors (kontakt@kanari.pl). Put the three files you receive into `data/`:
+
+```
+dataset.jsonl  {"uid", "category", "input", "output"}
+gold.jsonl     {"uid", "label": "vulnerable" | "safe"}
+prompts.json   {"rubric": {...}, "labels": {...}}
+```
+
+Do not commit the dataset or example attack prompts to a public repository.
+
+## Walkthrough
+
+The full step-by-step tutorial (Polish) covers:
+
+1. Converting the dataset to training examples.
+2. Splitting **by attack prompt**, not by answer. The original set has 43 distinct prompts, most of which appear in both halves of the benchmark's split, so a plain random split leaks.
+3. The model: encoder + linear head scoring each option.
+4. Training with optional class weights (vulnerable answers are a minority, about 19%).
+5. Calibration (temperature scaling) and ECE.
+6. Serving the model on `POST /v1/systemone` and scoring it with the benchmark's `run.py`.
+7. Using a confidence threshold, and handing uncertain cases to a larger LLM or a human.
+
+## Suggested layout
+
+```
+data/                 # the three files above (not committed)
+prepare_data.py       # dataset -> train/val/test.jsonl, grouped split
+train.py              # model, training loop, temperature scaling
+serve.py              # tiny POST /v1/systemone server for run.py
+```
 
 ## Install
 
@@ -43,51 +78,21 @@ All options of one example run in a single batch, with no generation loop. After
 pip install torch transformers numpy
 ```
 
-Default encoder: `distilbert-base-multilingual-cased` (works for English and Polish). Any small encoder from Hugging Face can be swapped in.
+Default encoder: `distilbert-base-multilingual-cased` (handles Polish). Any small encoder from Hugging Face can be swapped in.
 
-## Data format
+## Evaluate fairly
 
-One JSON object per line (`train.jsonl`, `val.jsonl`, `test.jsonl`):
-
-```json
-{"state": "Invoice never arrived, deadline is tomorrow.", "question": "Is this message urgent?", "options": ["yes", "no"], "label": 0}
-```
-
-`label` is the index of the correct option. Suggested split: 70% train, 15% validation (used for calibration), 15% test.
-
-Labels can come from manual annotation, from distillation of a larger LLM, or a mix. If you distill, spot-check a random sample by hand: the small model inherits the labeler's mistakes and overconfidence.
-
-## Train, calibrate, evaluate
-
-1. Train for 2 to 4 epochs with cross-entropy over the options (AdamW, learning rate around 3e-5).
-2. Fit the temperature `T` on the validation set.
-3. Report accuracy and ECE (expected calibration error) on the **test** set, before and after calibration.
-
-The full walkthrough with code is in the tutorial: *How to train your own small decision model* (link to the article).
-
-## Use in a workflow
-
-Add a confidence threshold. If the confidence is below it (say 0.7), hand the case to a larger LLM or a human:
-
-```python
-choice, conf = decide(text, "Is this message urgent?", ["yes", "no"])
-if conf < 0.7:
-    escalate(text)
-```
+- **Contamination.** If you train on all 189 answers, the benchmark's half B was in training and the score is inflated. To compare with the benchmark's table, train only on its half A.
+- **Leakage.** Even then, halves A and B share most attack prompts, so the comparison is gentler than a test on new attacks. The grouped test split from this repo is the more honest number.
+- **Report the question style.** The same model can score near-perfect or inverted depending on how it is asked. Say which style you used.
+- **Count errors, not accuracy.** Report missed vulnerabilities and false alarms separately, plus AUC.
 
 ## Limitations
 
-- **Closed answer space.** The model cannot invent options or explain itself.
-- **No multi-step reasoning.** It works for decisions based on knowledge and patterns, not for tasks that need multi-step calculation.
-- **Quality equals label quality.** It will learn the biases in your data.
-- **Data drift.** If the input distribution changes, confidence stops being reliable. Re-check ECE on fresh data.
-- **Confidence is not correctness.** A calibrated model is still wrong sometimes, just in predictable proportions.
-
-## Ideas for next steps
-
-- Try a smaller or faster encoder and compare latency.
-- Add more question types and measure accuracy per type.
-- Benchmark against a large LLM on the same test set: accuracy, cost and time per decision.
+- Small set, from one domain, in one language. It is a reference point for this task, not a general benchmark.
+- The model has a closed answer space: it cannot invent options or explain itself.
+- Quality equals label quality. Borderline cases in the data were decided by a person, and the model learns those decisions with their biases.
+- Calibrated confidence is not correctness, and it degrades when bots or attacks change. Re-check ECE on fresh data.
 
 ## License
 

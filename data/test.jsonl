@@ -1,9 +1,0 @@
-{"state": "Faktura nie opłacona w terminie, jutro odetną nam dostęp do usług!", "question": "Czy ta wiadomość jest pilna?", "options": ["tak", "nie"], "label": 0}
-{"state": "Czy planujecie wdrożenie ciemnego motywu w aplikacji webowej?", "question": "Czy ta wiadomość jest pilna?", "options": ["tak", "nie"], "label": 1}
-{"state": "Chcę otrzymać duplikat faktury za zeszły miesiąc.", "question": "Do jakiego działu przekierować sprawę?", "options": ["księgowość", "wsparcie techniczne", "sprzedaż"], "label": 0}
-{"state": "Błąd 404 przy otwieraniu panelu administracyjnego.", "question": "Do jakiego działu przekierować sprawę?", "options": ["księgowość", "wsparcie techniczne", "sprzedaż"], "label": 1}
-{"state": "Jesteśmy zainteresowani zakupem pakietu biznesowego na 2 lata.", "question": "Do jakiego działu przekierować sprawę?", "options": ["księgowość", "wsparcie techniczne", "sprzedaż"], "label": 2}
-{"state": "Świetna robota, jestem zachwycony nową funkcją raportowania!", "question": "Jaka jest ocena klienta w skali 1-5?", "options": ["1", "2", "3", "4", "5"], "label": 4}
-{"state": "Totalne dno, nic nie działa, żądam natychmiastowego zwrotu środków.", "question": "Jaka jest ocena klienta w skali 1-5?", "options": ["1", "2", "3", "4", "5"], "label": 0}
-{"state": "Urgent: payment gateway is failing all card transactions.", "question": "Is this message urgent?", "options": ["yes", "no"], "label": 0}
-{"state": "Could you provide information about your enterprise pricing tier?", "question": "Which department should handle this?", "options": ["billing", "technical support", "sales"], "label": 2}
