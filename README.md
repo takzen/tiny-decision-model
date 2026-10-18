@@ -73,13 +73,37 @@ train.py              # model, training loop, temperature scaling
 serve.py              # tiny POST /v1/systemone server for run.py
 ```
 
-## Install
+## Install & Usage (`uv`)
+
+This project uses [uv](https://docs.astral.sh/uv/) for project and dependency management with preconfigured PyTorch CUDA (`cu124`) sources:
 
 ```bash
-pip install torch transformers numpy
+# Clone the repository
+git clone https://github.com/takzen/tiny-decision-model.git
+cd tiny-decision-model
+
+# Install dependencies into .venv
+uv sync
+
+# Or with development/testing dependencies (pytest):
+uv sync --extra dev
 ```
 
-Default encoder: `distilbert-base-multilingual-cased` (handles Polish). Any small encoder from Hugging Face can be swapped in.
+Run scripts directly via `uv run` without manual virtualenv activation:
+
+```bash
+# Prepare dataset splits (group & benchmark)
+uv run python prepare_data.py --split all
+
+# Train and calibrate model
+uv run python train.py --split group
+
+# Run CLI decision with risk policy (P>=0.30)
+uv run python decide.py --state "Faktura nie dotarła, termin mija jutro." --question "Czy ta wiadomość jest pilna?" --options "tak" "nie"
+
+# Serve POST /v1/systemone for benchmark evaluation
+uv run python serve.py --checkpoint checkpoints/model_benchmark.pt --port 8000
+```
 
 ## Evaluate fairly
 
