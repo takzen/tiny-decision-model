@@ -1,0 +1,15 @@
+private/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.pt
+*.pth
+*.bin
+checkpoints/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/

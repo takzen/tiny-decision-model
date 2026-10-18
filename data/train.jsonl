@@ -1,0 +1,24 @@
+{"state": "Faktura nie dotarła, termin mija jutro o 12:00.", "question": "Czy ta wiadomość jest pilna?", "options": ["tak", "nie"], "label": 0}
+{"state": "Dzień dobry, chciałbym zapytać o ofertę na przyszły kwartał.", "question": "Czy ta wiadomość jest pilna?", "options": ["tak", "nie"], "label": 1}
+{"state": "Serwer produkcyjny przestał odpowiadać, baza danych leży!", "question": "Czy ta wiadomość jest pilna?", "options": ["tak", "nie"], "label": 0}
+{"state": "Pozdrawiam serdecznie i życzę miłego weekendu.", "question": "Czy ta wiadomość jest pilna?", "options": ["tak", "nie"], "label": 1}
+{"state": "Klient grozi zerwaniem kontraktu, jeśli nie odpiszemy w ciągu godziny.", "question": "Czy ta wiadomość jest pilna?", "options": ["tak", "nie"], "label": 0}
+{"state": "Kiedy planujecie kolejną aktualizację dokumentacji?", "question": "Czy ta wiadomość jest pilna?", "options": ["tak", "nie"], "label": 1}
+{"state": "Awaria krytyczna w systemie płatności, transakcje są odrzucane.", "question": "Czy ta wiadomość jest pilna?", "options": ["tak", "nie"], "label": 0}
+{"state": "Proszę o przesłanie cennika w wolnej chwili.", "question": "Czy ta wiadomość jest pilna?", "options": ["tak", "nie"], "label": 1}
+{"state": "Chciałbym opłacić fakturę za styczeń, podajcie numer konta.", "question": "Do jakiego działu przekierować sprawę?", "options": ["księgowość", "wsparcie techniczne", "sprzedaż"], "label": 0}
+{"state": "Aplikacja zawiesza się przy logowaniu i wyświetla błąd 500.", "question": "Do jakiego działu przekierować sprawę?", "options": ["księgowość", "wsparcie techniczne", "sprzedaż"], "label": 1}
+{"state": "Chcemy kupić licencję enterprise dla 50 użytkowników.", "question": "Do jakiego działu przekierować sprawę?", "options": ["księgowość", "wsparcie techniczne", "sprzedaż"], "label": 2}
+{"state": "Błędnie naliczono podatek VAT na dokumencie korygującym.", "question": "Do jakiego działu przekierować sprawę?", "options": ["księgowość", "wsparcie techniczne", "sprzedaż"], "label": 0}
+{"state": "Nie mogę zresetować hasła, link nie przychodzi na maila.", "question": "Do jakiego działu przekierować sprawę?", "options": ["księgowość", "wsparcie techniczne", "sprzedaż"], "label": 1}
+{"state": "Interesuje nas indywidualna wycena wdrożenia dla korporacji.", "question": "Do jakiego działu przekierować sprawę?", "options": ["księgowość", "wsparcie techniczne", "sprzedaż"], "label": 2}
+{"state": "Produkt jest rewelacyjny, wszystko działa perfekcyjnie i szybko!", "question": "Jaka jest ocena klienta w skali 1-5?", "options": ["1", "2", "3", "4", "5"], "label": 4}
+{"state": "Totalna porażka, nic nie działa, zmarnowałem tylko czas i pieniądze.", "question": "Jaka jest ocena klienta w skali 1-5?", "options": ["1", "2", "3", "4", "5"], "label": 0}
+{"state": "Jest w porządku, spełnia podstawowe wymagania, choć bez rewelacji.", "question": "Jaka jest ocena klienta w skali 1-5?", "options": ["1", "2", "3", "4", "5"], "label": 2}
+{"state": "Całkiem dobry produkt, drobne błędy w interfejsie, ale ogólnie na plus.", "question": "Jaka jest ocena klienta w skali 1-5?", "options": ["1", "2", "3", "4", "5"], "label": 3}
+{"state": "Słabo, interfejs nieczytelny i brak wsparcia ze strony pomocy technicznej.", "question": "Jaka jest ocena klienta w skali 1-5?", "options": ["1", "2", "3", "4", "5"], "label": 1}
+{"state": "Znakomita obsługa klienta, konsultant rozwiązał problem w 5 minut!", "question": "Jaka jest ocena klienta w skali 1-5?", "options": ["1", "2", "3", "4", "5"], "label": 4}
+{"state": "Payment failed, service interrupted for our entire company.", "question": "Is this message urgent?", "options": ["yes", "no"], "label": 0}
+{"state": "Just checking if you have any webinars scheduled next month.", "question": "Is this message urgent?", "options": ["yes", "no"], "label": 1}
+{"state": "Need a copy of last month's invoice for tax filing.", "question": "Which department should handle this?", "options": ["billing", "technical support", "sales"], "label": 0}
+{"state": "The API returns 401 Unauthorized despite valid token.", "question": "Which department should handle this?", "options": ["billing", "technical support", "sales"], "label": 1}

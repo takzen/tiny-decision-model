@@ -1,0 +1,9 @@
+{"state": "Pilnie potrzebujemy kontaktu, system produkcyjny nie przetwarza zamówień.", "question": "Czy ta wiadomość jest pilna?", "options": ["tak", "nie"], "label": 0}
+{"state": "Dziękuję za pomoc, sprawa rozwiązana.", "question": "Czy ta wiadomość jest pilna?", "options": ["tak", "nie"], "label": 1}
+{"state": "Proszę o korektę danych na fakturze nr 123/2026.", "question": "Do jakiego działu przekierować sprawę?", "options": ["księgowość", "wsparcie techniczne", "sprzedaż"], "label": 0}
+{"state": "Nie działa integracja webhooków po ostatniej aktualizacji.", "question": "Do jakiego działu przekierować sprawę?", "options": ["księgowość", "wsparcie techniczne", "sprzedaż"], "label": 1}
+{"state": "Szukamy oferty dla zespołu 20 osób, chcielibyśmy umówić demo.", "question": "Do jakiego działu przekierować sprawę?", "options": ["księgowość", "wsparcie techniczne", "sprzedaż"], "label": 2}
+{"state": "Bardzo słaba jakość, aplikacja co chwilę się wyłącza.", "question": "Jaka jest ocena klienta w skali 1-5?", "options": ["1", "2", "3", "4", "5"], "label": 0}
+{"state": "Wszystko super, gorąco polecam wszystkim znajomym!", "question": "Jaka jest ocena klienta w skali 1-5?", "options": ["1", "2", "3", "4", "5"], "label": 4}
+{"state": "Database connection timeout, customers cannot log in.", "question": "Is this message urgent?", "options": ["yes", "no"], "label": 0}
+{"state": "Could you send the invoice again to accounting@example.com?", "question": "Which department should handle this?", "options": ["billing", "technical support", "sales"], "label": 0}
