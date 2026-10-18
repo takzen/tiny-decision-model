@@ -178,6 +178,7 @@ def save_split_files(out_dir: Path, splits: dict, split_name: str):
 
 
 def create_sample_dummy_data(data_dir: Path):
+    data_dir.mkdir(parents=True, exist_ok=True)  # data/ is git-ignored, so it is missing after a fresh clone
     dummy_file = data_dir / "sample_dummy.jsonl"
     dummy_samples = [
         {
